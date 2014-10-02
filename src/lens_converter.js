@@ -264,12 +264,15 @@ LensImporter.Prototype = function() {
       // eLife specific?
       // ----------------
 
-      var memberListId = contrib.querySelector("xref[ref-type=other]").getAttribute("rid");
-      var members = state.xmlDoc.querySelectorAll("#"+memberListId+" contrib");
+      var memberList = contrib.querySelector("xref[ref-type=other]");
 
-      contribNode.members = _.map(members, function(m) {
-        return _getName(m.querySelector("name"));
-      });
+      if (memberList) {
+        var memberListId = memberList.getAttribute("rid");
+        var members = state.xmlDoc.querySelectorAll("#"+memberListId+" contrib");
+        contribNode.members = _.map(members, function(m) {
+          return _getName(m.querySelector("name"));
+        });
+      }
     }
 
 
@@ -1113,7 +1116,6 @@ LensImporter.Prototype = function() {
     return nodes;
   };
 
-
   this.boxedText = function(state, box) {
     var doc = state.doc;
 
@@ -1127,7 +1129,7 @@ LensImporter.Prototype = function() {
       "type": "box",
       "id": boxId,
       "source_id": box.getAttribute("id"),
-      "label": label ? label.textContent : boxId.replace("_", " "),
+      // "label": label ? label.textContent : boxId.replace("_", " "),
       "children": _.pluck(childNodes, 'id')
     };
     doc.create(boxNode);
@@ -1155,7 +1157,7 @@ LensImporter.Prototype = function() {
         }
         else {
           var par = this.paragraphGroup(state, data);
-          nodes.push(par[0].id);
+          if (par.length > 0) nodes.push(par[0].id);
         }
       }
     }
@@ -1720,6 +1722,7 @@ LensImporter.State = function(xmlDoc, doc, options) {
   var WS_LEFT = /^\s+/g;
   var WS_LEFT_ALL = /^\s*/g;
   var WS_RIGHT = /\s+$/g;
+   var WS_ALL = /\s+/g;
   // var ALL_WS_NOTSPACE_LEFT = /^[\t\n]+/g;
   // var ALL_WS_NOTSPACE_RIGHT = /[\t\n]+$/g;
   var SPACE = " ";
@@ -1744,6 +1747,11 @@ LensImporter.State = function(xmlDoc, doc, options) {
     }
 
     text = text.replace(WS_RIGHT, SPACE);
+
+    // EXPERIMENTAL: also remove white-space within
+    if (this.options.REMOVE_INNER_WS) {
+      text = text.replace(WS_ALL, SPACE);
+    }
 
     this.lastChar = text[text.length-1] || this.lastChar;
     return text;
